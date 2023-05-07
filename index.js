@@ -10,43 +10,96 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.post('/api/image/text', async (req, res) => {
-
+const getImageFromText = async (prompt, width, height, modelid) => {
     try {
-        let { prompt, width, height, type } = req.body;
-        const imagePromt = `Generate an image of a ${type} with the text "${prompt}"`
-        if (width > 1080 || height > 1080) {
-            width = 1080;
-            height = 1080;
-        }
-        const response = await fetch('https://stablediffusionapi.com/api/v3/text2img', {
+        const response = await fetch('https://stablediffusionapi.com/api/v3/dreambooth', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 "key": process.env.STABLE_KEY,
-                "prompt": imagePromt,
-                "negative_prompt": "((out of frame)), ((extra fingers)), mutated hands, ((poorly drawn hands)), ((poorly drawn face)), (((mutation))), (((deformed))), (((tiling))), ((naked)), ((tile)), ((fleshpile)), ((ugly)), (((abstract))), blurry, ((bad anatomy)), ((bad proportions)), ((extra limbs)), cloned face, (((skinny))), glitchy, ((extra breasts)), ((double torso)), ((extra arms)), ((extra hands)), ((mangled fingers)), ((missing breasts)), (missing lips), ((ugly face)), ((fat)), ((extra legs)), anime",
+                "model_id": modelid,
+                "prompt": prompt,
+                "negative_prompt": "painting, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, deformed, ugly, blurry, bad anatomy, bad proportions, extra limbs, cloned face, skinny, glitchy, double torso, extra arms, extra hands, mangled fingers, missing lips, ugly face, distorted face, extra legs, anime",
                 "width": width,
                 "height": height,
                 "samples": "1",
-                "num_inference_steps": "20",
+                "num_inference_steps": "30",
+                "safety_checker": "no",
+                "enhance_prompt": "yes",
                 "seed": null,
                 "guidance_scale": 7.5,
-                "safety_checker": "yes",
                 "webhook": null,
                 "track_id": null
             })
         });
         const data = await response.json();
         console.log(data);
-        res.send({
-            image: data.output
-        })
+        return data.output;
     } catch (error) {
         console.log(error);
     }
+}
+
+const imageToImage = async (prompt, width, height) => {
+    try {
+        const response = await fetch('https://stablediffusionapi.com/api/v3/img2img', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                "key": "",
+                "prompt": prompt,
+                "negative_prompt": null,
+                "init_image": null,
+                "width": width,
+                "height": height,
+                "samples": "1",
+                "num_inference_steps": "30",
+                "guidance_scale": 7.5,
+                "safety_checker":"yes",
+                "strength": 0.7,
+                "seed": null,
+                "webhook": null,
+                "track_id": null
+            })
+        });
+        const data = await response.json();
+        console.log('Image Success');
+        return data.output;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+app.post('/api/image/img', async (req, res) => {
+    console.log(req.body);
+    res.json('Success');
+})
+
+app.post('/api/image/text', async (req, res) => {
+    let { prompt, width, height, type } = req.body;
+    let modelid = null;
+    if (type === 'ARTSY') {
+        modelid = 'midjourney';
+    } else if (type === 'PHOTOSHOOT') {
+        modelid = 'realistic-vision-v13';
+    } else if (type === 'KAWAII') {
+        modelid = 'anything-v4'
+    }
+
+    const imagePromt = `Generate an image of a ${type} of "${prompt}"`
+
+    if (width > 1080 || height > 1080) {
+        width = 1080;
+        height = 1080;
+    }
+    const image = await getImageFromText(imagePromt, width, height, modelid);
+    res.json({ 
+        image: image,
+    });
 })
 
 app.listen(PORT, () => {
