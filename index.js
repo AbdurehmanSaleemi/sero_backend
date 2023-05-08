@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
-import uploadImage from './image.js';
+//import uploadImage from './image.js';
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
