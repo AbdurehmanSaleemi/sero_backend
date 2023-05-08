@@ -76,7 +76,7 @@ const getImageFromText_ = async (prompt, width, height) => {
 
 const imageToImage = async (prompt, width, height, image) => {
     //const imgUrl = await uploadImage(image)
-    try {
+   // try {
         // const response = await fetch('https://stablediffusionapi.com/api/v3/img2img', {
         //     method: 'POST',
         //     headers: {
@@ -106,7 +106,7 @@ const imageToImage = async (prompt, width, height, image) => {
    // } catch (error) {
    //     console.log(error);
  //   }
-//}
+}
 
 app.post('/api/image/img', async (req, res) => {
    // console.log(req.body);
