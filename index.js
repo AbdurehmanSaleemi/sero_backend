@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
-//import uploadImage from './image.js';
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
@@ -60,10 +59,10 @@ const getImageFromText_ = async (prompt, width, height) => {
                 "num_inference_steps": "20",
                 "seed": null,
                 "guidance_scale": 10,
-                "safety_checker":"yes",
+                "safety_checker": "yes",
                 "webhook": null,
                 "track_id": null
-                }
+            }
             )
         });
         const data = await response.json();
@@ -74,45 +73,47 @@ const getImageFromText_ = async (prompt, width, height) => {
     }
 }
 
-const imageToImage = async (prompt, width, height, image) => {
-    //const imgUrl = await uploadImage(image)
-   // try {
-        // const response = await fetch('https://stablediffusionapi.com/api/v3/img2img', {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //     },
-        //     body: JSON.stringify({
-        //         "key": "",
-        //         "prompt": prompt,
-        //         "negative_prompt": null,
-        //         "init_image": imgUrl,
-        //         "width": width,
-        //         "height": height,
-        //         "samples": "1",
-        //         "num_inference_steps": "30",
-        //         "guidance_scale": 7.5,
-        //         "safety_checker":"yes",
-        //         "strength": 0.7,
-        //         "seed": null,
-        //         "webhook": null,
-        //         "track_id": null
-        //     })
-        // });
-        //const data = await response.json();
-       // console.log(imgUrl)
-       // console.log('Image Success');
-      //  return data.output;
-   // } catch (error) {
-   //     console.log(error);
- //   }
+const imageToImage = async (prompt, url) => {
+    try {
+        const response = await fetch('https://stablediffusionapi.com/api/v3/img2img', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                "key": process.env.STABLE_KEY,
+                "prompt": prompt,
+                "negative_prompt": null,
+                "init_image": url,
+                "width": 1024,
+                "height": 1024,
+                "samples": "1",
+                "num_inference_steps": "30",
+                "guidance_scale": 7.5,
+                "safety_checker":"yes",
+                "strength": 0.7,
+                "seed": null,
+                "webhook": null,
+                "track_id": null
+            })
+        });
+        const data = await response.json();
+        console.log(data);
+        return data.output;
+    } catch (error) {
+        console.log(error);
+    }
 }
 
+
 app.post('/api/image/img', async (req, res) => {
-   // console.log(req.body);
-    //imageToImage(req.body.prompt, req.body.width, req.body.height, req.body.image);
-    res.json('Success');
-})
+    let { prompt, url } = req.body;
+    console.log(prompt, url);
+    const image = await imageToImage(prompt, url);
+    res.json({
+        image: image,
+    });
+});
 
 app.post('/api/image/text', async (req, res) => {
     let { prompt, width, height, type } = req.body;
@@ -123,7 +124,7 @@ app.post('/api/image/text', async (req, res) => {
         const artsy = await getImageFromText_(prompt, width, height);
         res.json({
             image: artsy,
-        });``
+        }); ``
         return;
     } else if (type === 'PHOTOSHOOT') {
         modelid = 'realistic-vision-v13';
@@ -138,7 +139,7 @@ app.post('/api/image/text', async (req, res) => {
         height = 1080;
     }
     const image = await getImageFromText(imagePromt, width, height, modelid);
-    res.json({ 
+    res.json({
         image: image,
     });
 })
