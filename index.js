@@ -75,7 +75,7 @@ const getImageFromText_ = async (prompt, width, height) => {
 }
 
 const imageToImage = async (prompt, width, height, image) => {
-    const imgUrl = await uploadImage(image)
+    //const imgUrl = await uploadImage(image)
     try {
         // const response = await fetch('https://stablediffusionapi.com/api/v3/img2img', {
         //     method: 'POST',
@@ -100,16 +100,16 @@ const imageToImage = async (prompt, width, height, image) => {
         //     })
         // });
         //const data = await response.json();
-        console.log(imgUrl)
-        console.log('Image Success');
-        return data.output;
-    } catch (error) {
-        console.log(error);
-    }
-}
+       // console.log(imgUrl)
+       // console.log('Image Success');
+      //  return data.output;
+   // } catch (error) {
+   //     console.log(error);
+ //   }
+//}
 
 app.post('/api/image/img', async (req, res) => {
-    console.log(req.body);
+   // console.log(req.body);
     //imageToImage(req.body.prompt, req.body.width, req.body.height, req.body.image);
     res.json('Success');
 })
