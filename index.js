@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import uploadImage from './image.js';
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
@@ -21,7 +22,7 @@ const getImageFromText = async (prompt, width, height, modelid) => {
                 "key": process.env.STABLE_KEY,
                 "model_id": modelid,
                 "prompt": prompt,
-                "negative_prompt": "(deformed iris, deformed pupils, semi-realistic, naked, nude, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4), nude, naked, text, close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, painting, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, deformed, ugly, blurry, bad anatomy, bad proportions, extra limbs, cloned face, skinny, glitchy, double torso, extra arms, extra hands, mangled fingers, missing lips, ugly face, distorted face, extra legs, duplicate man, duplicate women",
+                "negative_prompt": "painting, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, deformed, ugly, blurry, bad anatomy, bad proportions, extra limbs, cloned face, skinny, glitchy, double torso, extra arms, extra hands, mangled fingers, missing lips, ugly face, distorted face, extra legs, anime, nude, naked, extra face",
                 "width": width,
                 "height": height,
                 "samples": "1",
@@ -29,7 +30,7 @@ const getImageFromText = async (prompt, width, height, modelid) => {
                 "safety_checker": "no",
                 "enhance_prompt": "yes",
                 "seed": null,
-                "guidance_scale": 7.5,
+                "guidance_scale": 15,
                 "webhook": null,
                 "track_id": null
             })
@@ -42,31 +43,64 @@ const getImageFromText = async (prompt, width, height, modelid) => {
     }
 }
 
-const imageToImage = async (prompt, width, height) => {
+const getImageFromText_ = async (prompt, width, height) => {
     try {
-        const response = await fetch('https://stablediffusionapi.com/api/v3/img2img', {
+        const response = await fetch('https://stablediffusionapi.com/api/v3/text2img', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                "key": "",
+                "key": process.env.STABLE_KEY,
                 "prompt": prompt,
-                "negative_prompt": null,
-                "init_image": null,
+                "negative_prompt": "painting, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, deformed, ugly, blurry, bad anatomy, bad proportions, extra limbs, cloned face, skinny, glitchy, double torso, extra arms, extra hands, mangled fingers, missing lips, ugly face, distorted face, extra legs, anime, nude, naked, extra face",
                 "width": width,
                 "height": height,
                 "samples": "1",
-                "num_inference_steps": "30",
-                "guidance_scale": 7.5,
-                "safety_checker":"yes",
-                "strength": 0.7,
+                "num_inference_steps": "20",
                 "seed": null,
+                "guidance_scale": 10,
+                "safety_checker":"yes",
                 "webhook": null,
                 "track_id": null
-            })
+                }
+            )
         });
         const data = await response.json();
+        console.log(data);
+        return data.output;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+const imageToImage = async (prompt, width, height, image) => {
+    const imgUrl = await uploadImage(image)
+    try {
+        // const response = await fetch('https://stablediffusionapi.com/api/v3/img2img', {
+        //     method: 'POST',
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //     },
+        //     body: JSON.stringify({
+        //         "key": "",
+        //         "prompt": prompt,
+        //         "negative_prompt": null,
+        //         "init_image": imgUrl,
+        //         "width": width,
+        //         "height": height,
+        //         "samples": "1",
+        //         "num_inference_steps": "30",
+        //         "guidance_scale": 7.5,
+        //         "safety_checker":"yes",
+        //         "strength": 0.7,
+        //         "seed": null,
+        //         "webhook": null,
+        //         "track_id": null
+        //     })
+        // });
+        //const data = await response.json();
+        console.log(imgUrl)
         console.log('Image Success');
         return data.output;
     } catch (error) {
@@ -76,6 +110,7 @@ const imageToImage = async (prompt, width, height) => {
 
 app.post('/api/image/img', async (req, res) => {
     console.log(req.body);
+    //imageToImage(req.body.prompt, req.body.width, req.body.height, req.body.image);
     res.json('Success');
 })
 
@@ -83,7 +118,13 @@ app.post('/api/image/text', async (req, res) => {
     let { prompt, width, height, type } = req.body;
     let modelid = null;
     if (type === 'ARTSY') {
-        modelid = 'midjourney';
+        let temp = 'smooth, sharp focus, illustration, octane render, 8k, corona render, movie concept art, octane render, 8k, corona render, cinematic, trending on artstation, movie concept art, cinematic composition , ultra detailed, realistic , hiperealistic , volumetric lighting'
+        prompt = prompt + ', ' + temp;
+        const artsy = await getImageFromText_(prompt, width, height);
+        res.json({
+            image: artsy,
+        });``
+        return;
     } else if (type === 'PHOTOSHOOT') {
         modelid = 'realistic-vision-v13';
     } else if (type === 'KAWAII') {
