@@ -156,7 +156,7 @@ app.post('/payment', async (req, res) => {
     console.log(price);
     try {
         const session = await stripe.checkout.sessions.create({
-            success_url: 'https://sero.pages.dev/',
+            success_url: 'https://sero.pages.dev/complete-checkout',
             mode: 'payment',
             payment_method_types: ['card'],
             line_items: [
