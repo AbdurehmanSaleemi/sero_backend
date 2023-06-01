@@ -152,6 +152,7 @@ app.post('/api/image/text', async (req, res) => {
 
 app.post('/payment', async (req, res) => {
     const { price } = req.body;
+    const {email} = req.body;
     console.log(price);
     try {
         const session = await stripe.checkout.sessions.create({
@@ -172,11 +173,12 @@ app.post('/payment', async (req, res) => {
                 },
             ],
             cancel_url: 'https://sero.pages.dev/',
-            customer_email: 'abc@byom.de',
+            customer_email: email,
         });
         res.json({ url: session.url });
     } catch (error) {
         console.log(error);
+        res.status(500).json({ error: 'Something went wrong' });
     }
 })
 
