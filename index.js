@@ -6,11 +6,6 @@ import axios from 'axios';
 import stripe from 'stripe';
 stripe('sk_test_4eC39HqLyjWDarjtT1zdp7dc');
 
-const key = fs.readFileSync('./key.pem');
-const cert = fs.readFileSync('./cert.pem');
-
-
-
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
