@@ -194,57 +194,89 @@ app.post('/api/text/video', async (req, res) => {
                 subtitles: 'false',
                 provider: { type: 'microsoft', voice_id: 'en-US-JennyNeural' },
                 ssml: 'false',
-                input: 'I love to code'
+                input: text
             },
             config: { fluent: 'false', pad_audio: '0.0' },
-            source_url: 'https://create-images-results.d-id.com/api_docs/assets/noelle.jpeg'
+            source_url: picUrl
         }
     };
 
     axios
         .request(options)
         .then(function (response) {
-            console.log(response.data);
+            console.log(response.data.id);
+            res.sendStatus(200).json({
+                id: response.data.id,
+            });
         })
         .catch(function (error) {
             console.error(error);
+            res.sendStatus(500);
+        });
+});
+
+app.post('/api/text/getVideo', async (req, res) => {
+    let { id } = req.body;
+    console.log(id);
+
+    const axios = require('axios');
+
+    const options = {
+        method: 'GET',
+        url: `https://api.d-id.com/talks/${id}`,
+        headers: {
+            accept: 'application/json',
+            authorization: 'Basic Y21WcGJtVndhRzkwYjBCbmJXRnBiQzVqYjIwOlAxSE5wLTZIaGplN05iQmdVRkIySg=='
+        }
+    };
+
+    axios
+        .request(options)
+        .then(function (response) {
+            console.log(response.data.result_url);
+            res.sendStatus(200).json({
+                video: response.data.result_url,
+            });
+        })
+        .catch(function (error) {
+            console.error(error);
+            res.sendStatus(500);
         });
 });
 
 
-
-app.post('/payment', async (req, res) => {
-    const { price } = req.body;
-    const { email } = req.body;
-    console.log(price);
-    try {
-        const session = await stripe.checkout.sessions.create({
-            success_url: 'http://localhost:5173/complete-checkout',
-            mode: 'payment',
-            payment_method_types: ['card'],
-            line_items: [
-                {
-                    price_data: {
-                        unit_amount: price,
-                        currency: 'usd',
-                        product_data: {
-                            name: 'Test',
-                            description: 'Serotech Test Payment\n use 4242424242424242 as card number, 04/24 as expiry date and 242 as CVC',
+    app.post('/payment', async (req, res) => {
+        const { price } = req.body;
+        const { email } = req.body;
+        console.log(price);
+        try {
+            const session = await stripe.checkout.sessions.create({
+                success_url: 'http://localhost:5173/complete-checkout',
+                mode: 'payment',
+                payment_method_types: ['card'],
+                line_items: [
+                    {
+                        price_data: {
+                            unit_amount: price,
+                            currency: 'usd',
+                            product_data: {
+                                name: 'Test',
+                                description: 'Serotech Test Payment\n use 4242424242424242 as card number, 04/24 as expiry date and 242 as CVC',
+                            },
                         },
+                        quantity: 1,
                     },
-                    quantity: 1,
-                },
-            ],
-            cancel_url: 'http://localhost:5173/',
-            customer_email: email,
-        });
-        res.json({ url: session.url });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: 'Something went wrong' });
-    }
-})
+                ],
+                cancel_url: 'http://localhost:5173/',
+                customer_email: email,
+            });
+            res.json({ url: session.url });
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ error: 'Something went wrong' });
+        }
+    })
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
