@@ -2,6 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import axios from 'axios';
+import stripe from 'stripe';
+stripe('sk_test_4eC39HqLyjWDarjtT1zdp7dc');
+
+const key = fs.readFileSync('./key.pem');
+const cert = fs.readFileSync('./cert.pem');
+
+
+
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
@@ -42,6 +51,26 @@ const getImageFromText = async (prompt, width, height, modelid) => {
     }
 }
 
+const fetchResult = async (id) => {
+    console.log('fetching result');
+    try {
+        const response = await fetch(`https://stablediffusionapi.com/api/v3/fetch/${id}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    "key": process.env.STABLE_KEY,
+                })
+            });
+        const data = await response.json();
+        console.log(data);
+        return data.output;
+    } catch (error) {
+        console.log(error);
+    }
+}
 
 const getImageFromText_ = async (prompt, neg_prompt) => {
     try {
@@ -68,6 +97,10 @@ const getImageFromText_ = async (prompt, neg_prompt) => {
         });
         const data = await response.json();
         console.log(data);
+        if (data.status === 'processing') {
+            const result = await fetchResult(data.id);
+            return result;
+        }
         return data.output;
     } catch (error) {
         console.log(error);
@@ -91,7 +124,7 @@ const imageToImage = async (prompt, url) => {
                 "samples": "4",
                 "num_inference_steps": "30",
                 "guidance_scale": 7.5,
-                "safety_checker":"yes",
+                "safety_checker": "yes",
                 "strength": 0.7,
                 "seed": null,
                 "webhook": null,
@@ -148,6 +181,75 @@ app.post('/api/image/text', async (req, res) => {
     }
 })
 
+app.post('/api/text/video', async (req, res) => {
+    let { picUrl, text } = req.body;
+    console.log(picUrl, text);
+
+    const options = {
+        method: 'POST',
+        url: 'https://api.d-id.com/talks',
+        headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            authorization: 'Basic Y21WcGJtVndhRzkwYjBCbmJXRnBiQzVqYjIwOlAxSE5wLTZIaGplN05iQmdVRkIySg=='
+        },
+        data: {
+            script: {
+                type: 'text',
+                subtitles: 'false',
+                provider: { type: 'microsoft', voice_id: 'en-US-JennyNeural' },
+                ssml: 'false',
+                input: 'I love to code'
+            },
+            config: { fluent: 'false', pad_audio: '0.0' },
+            source_url: 'https://create-images-results.d-id.com/api_docs/assets/noelle.jpeg'
+        }
+    };
+
+    axios
+        .request(options)
+        .then(function (response) {
+            console.log(response.data);
+        })
+        .catch(function (error) {
+            console.error(error);
+        });
+});
+
+
+
+app.post('/payment', async (req, res) => {
+    const { price } = req.body;
+    const { email } = req.body;
+    console.log(price);
+    try {
+        const session = await stripe.checkout.sessions.create({
+            success_url: 'http://localhost:5173/complete-checkout',
+            mode: 'payment',
+            payment_method_types: ['card'],
+            line_items: [
+                {
+                    price_data: {
+                        unit_amount: price,
+                        currency: 'usd',
+                        product_data: {
+                            name: 'Test',
+                            description: 'Serotech Test Payment\n use 4242424242424242 as card number, 04/24 as expiry date and 242 as CVC',
+                        },
+                    },
+                    quantity: 1,
+                },
+            ],
+            cancel_url: 'http://localhost:5173/',
+            customer_email: email,
+        });
+        res.json({ url: session.url });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Something went wrong' });
+    }
+})
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-})
+});
