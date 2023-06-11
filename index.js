@@ -205,7 +205,7 @@ app.post('/api/text/video', async (req, res) => {
         .request(options)
         .then(function (response) {
             console.log(response.data.id);
-            res.sendStatus(200).json({
+            res.status(200).json({
                 id: response.data.id,
             });
         })
@@ -232,7 +232,7 @@ app.get('/api/text/getVideo', async (req, res) => {
         .request(options)
         .then(function (response) {
             console.log(response.data.result_url);
-            res.sendStatus(200).json({
+            res.status(200).json({
                 video: response.data.result_url,
             });
         })
