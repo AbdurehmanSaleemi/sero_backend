@@ -215,7 +215,7 @@ app.post('/api/text/video', async (req, res) => {
         });
 });
 
-app.get('/api/text/getVideo', async (req, res) => {
+app.post('/api/text/getVideo', async (req, res) => {
     let { id } = req.body;
     console.log(id);
 
