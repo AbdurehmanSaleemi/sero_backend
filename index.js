@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import axios from 'axios';
 import stripe from 'stripe';
-stripe('sk_test_4eC39HqLyjWDarjtT1zdp7dc');
+const stripe_ = stripe('sk_test_4eC39HqLyjWDarjtT1zdp7dc');
 
 dotenv.config();
 
@@ -248,7 +248,7 @@ app.post('/api/text/getVideo', async (req, res) => {
         const { email } = req.body;
         console.log(price);
         try {
-            const session = await stripe.checkout.sessions.create({
+            const session = await stripe_.checkout.sessions.create({
                 success_url: 'http://localhost:5173/complete-checkout',
                 mode: 'payment',
                 payment_method_types: ['card'],
