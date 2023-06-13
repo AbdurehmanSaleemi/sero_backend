@@ -177,7 +177,7 @@ app.post('/api/image/text', async (req, res) => {
 })
 
 app.post('/api/text/video', async (req, res) => {
-    let { picUrl, text } = req.body;
+    let { picUrl, text, voice } = req.body;
     console.log(picUrl, text);
 
     const options = {
@@ -192,7 +192,7 @@ app.post('/api/text/video', async (req, res) => {
             script: {
                 type: 'text',
                 subtitles: 'false',
-                provider: { type: 'microsoft', voice_id: 'en-US-JennyNeural' },
+                provider: { type: 'microsoft', voice_id: voice },
                 ssml: 'false',
                 input: text
             },
