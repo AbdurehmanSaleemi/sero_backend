@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import axios from 'axios';
 import stripe from 'stripe';
-const stripe_ = stripe('sk_test_4eC39HqLyjWDarjtT1zdp7dc');
+const stripe_ = stripe('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');
 
 dotenv.config();
 
