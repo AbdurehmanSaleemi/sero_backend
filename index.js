@@ -2,6 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import axios from 'axios';
+import stripe from 'stripe';
+const stripe_ = stripe('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');
+
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
@@ -42,6 +46,26 @@ const getImageFromText = async (prompt, width, height, modelid) => {
     }
 }
 
+const fetchResult = async (id) => {
+    console.log('fetching result');
+    try {
+        const response = await fetch(`https://stablediffusionapi.com/api/v3/fetch/${id}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    "key": process.env.STABLE_KEY,
+                })
+            });
+        const data = await response.json();
+        console.log(data);
+        return data.output;
+    } catch (error) {
+        console.log(error);
+    }
+}
 
 const getImageFromText_ = async (prompt, neg_prompt) => {
     try {
@@ -68,6 +92,10 @@ const getImageFromText_ = async (prompt, neg_prompt) => {
         });
         const data = await response.json();
         console.log(data);
+        if (data.status === 'processing') {
+            const result = await fetchResult(data.id);
+            return result;
+        }
         return data.output;
     } catch (error) {
         console.log(error);
@@ -91,7 +119,7 @@ const imageToImage = async (prompt, url) => {
                 "samples": "4",
                 "num_inference_steps": "30",
                 "guidance_scale": 7.5,
-                "safety_checker":"yes",
+                "safety_checker": "yes",
                 "strength": 0.7,
                 "seed": null,
                 "webhook": null,
@@ -148,6 +176,107 @@ app.post('/api/image/text', async (req, res) => {
     }
 })
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-})
+app.post('/api/text/video', async (req, res) => {
+    let { picUrl, text, voice } = req.body;
+    console.log(picUrl, text);
+
+    const options = {
+        method: 'POST',
+        url: 'https://api.d-id.com/talks',
+        headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            authorization: 'Basic Y21WcGJtVndhRzkwYjBCbmJXRnBiQzVqYjIwOlAxSE5wLTZIaGplN05iQmdVRkIySg=='
+        },
+        data: {
+            script: {
+                type: 'text',
+                subtitles: 'false',
+                provider: { type: 'microsoft', voice_id: voice },
+                ssml: 'false',
+                input: text
+            },
+            config: { fluent: 'false', pad_audio: '0.0' },
+            source_url: picUrl
+        }
+    };
+
+    axios
+        .request(options)
+        .then(function (response) {
+            console.log(response.data.id);
+            res.status(200).json({
+                id: response.data.id,
+            });
+        })
+        .catch(function (error) {
+            console.error(error);
+            res.sendStatus(500);
+        });
+});
+
+app.post('/api/text/getVideo', async (req, res) => {
+    let { id } = req.body;
+    console.log(id);
+
+    const options = {
+        method: 'GET',
+        url: `https://api.d-id.com/talks/${id}`,
+        headers: {
+            accept: 'application/json',
+            authorization: 'Basic Y21WcGJtVndhRzkwYjBCbmJXRnBiQzVqYjIwOlAxSE5wLTZIaGplN05iQmdVRkIySg=='
+        }
+    };
+
+    axios
+        .request(options)
+        .then(function (response) {
+            console.log(response.data.result_url);
+            res.status(200).json({
+                video: response.data.result_url,
+            });
+        })
+        .catch(function (error) {
+            console.error(error);
+            res.sendStatus(500);
+        });
+});
+
+
+    app.post('/payment', async (req, res) => {
+        const { price, planName } = req.body;
+        const { email } = req.body;
+        const { description } = req.body;
+        const { successUrl, cancelUrl } = req.body;
+        console.log(price);
+        try {
+            const session = await stripe_.checkout.sessions.create({
+                success_url: successUrl,
+                mode: 'payment',
+                payment_method_types: ['card'],
+                line_items: [
+                    {
+                        price_data: {
+                            unit_amount: price,
+                            currency: 'usd',
+                            product_data: {
+                                name: planName,
+                                description: description,
+                            },
+                        },
+                        quantity: 1,
+                    },
+                ],
+                cancel_url: cancelUrl,
+                customer_email: email,
+            });
+            res.json({ url: session.url });
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ error: 'Something went wrong' });
+        }
+    })
+
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
