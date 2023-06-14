@@ -244,12 +244,14 @@ app.post('/api/text/getVideo', async (req, res) => {
 
 
     app.post('/payment', async (req, res) => {
-        const { price } = req.body;
+        const { price, planName } = req.body;
         const { email } = req.body;
+        const { description } = req.body;
+        const { successUrl, cancelUrl } = req.body;
         console.log(price);
         try {
             const session = await stripe_.checkout.sessions.create({
-                success_url: 'http://localhost:5173/complete-checkout',
+                success_url: successUrl,
                 mode: 'payment',
                 payment_method_types: ['card'],
                 line_items: [
@@ -258,14 +260,14 @@ app.post('/api/text/getVideo', async (req, res) => {
                             unit_amount: price,
                             currency: 'usd',
                             product_data: {
-                                name: 'Test',
-                                description: 'Serotech Test Payment\n use 4242424242424242 as card number, 04/24 as expiry date and 242 as CVC',
+                                name: planName,
+                                description: description,
                             },
                         },
                         quantity: 1,
                     },
                 ],
-                cancel_url: 'http://localhost:5173/',
+                cancel_url: cancelUrl,
                 customer_email: email,
             });
             res.json({ url: session.url });
